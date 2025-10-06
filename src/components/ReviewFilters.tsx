@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReviewFiltersProps {
   businesses: Array<{ id: string; name: string }>;
@@ -11,6 +13,12 @@ interface ReviewFiltersProps {
   setSelectedRating: (value: string) => void;
   selectedSentiment: string;
   setSelectedSentiment: (value: string) => void;
+}
+
+interface Source {
+  id: string;
+  name: string;
+  display_name: string;
 }
 
 const ReviewFilters = ({
@@ -25,9 +33,46 @@ const ReviewFilters = ({
   setSelectedSentiment,
 }: ReviewFiltersProps) => {
   const { t } = useTranslation();
-  const sources = ["google", "facebook", "yelp", "app store", "trustpilot"];
+  const [availableSources, setAvailableSources] = useState<Source[]>([]);
   const ratings = ["5", "4", "3", "2", "1"];
   const sentiments = ["positive", "negative", "neutral"];
+
+  useEffect(() => {
+    fetchEnabledSources();
+  }, [selectedBusiness]);
+
+  const fetchEnabledSources = async () => {
+    if (selectedBusiness === "all") {
+      // Fetch all sources for "all" businesses
+      const { data, error } = await supabase
+        .from("sources")
+        .select("*")
+        .order("display_name");
+      
+      if (!error && data) {
+        setAvailableSources(data);
+      }
+    } else {
+      // Fetch only enabled sources for selected business
+      const { data, error } = await supabase
+        .from("enabled_sources")
+        .select(`
+          sources (
+            id,
+            name,
+            display_name
+          )
+        `)
+        .eq("business_id", selectedBusiness);
+      
+      if (!error && data) {
+        const sources = data
+          .map((item: any) => item.sources)
+          .filter((source): source is Source => source !== null);
+        setAvailableSources(sources);
+      }
+    }
+  };
 
   return (
     <div className="bg-card border border-border rounded-xl p-6 shadow-lg">
@@ -69,15 +114,15 @@ const ReviewFilters = ({
           >
             {t("dashboard.all")}
           </Button>
-          {sources.map((source) => (
+          {availableSources.map((source) => (
             <Button
-              key={source}
-              variant={selectedSource === source ? "default" : "outline"}
+              key={source.id}
+              variant={selectedSource === source.name ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedSource(source)}
+              onClick={() => setSelectedSource(source.name)}
               className="rounded-lg"
             >
-              {source === "app store" ? t("dashboard.appStore") : source.charAt(0).toUpperCase() + source.slice(1)}
+              {source.display_name}
             </Button>
           ))}
         </div>
