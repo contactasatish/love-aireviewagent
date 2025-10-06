@@ -14,7 +14,246 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      businesses: {
+        Row: {
+          categories: string[] | null
+          created_at: string | null
+          id: string
+          name: string
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          categories?: string[] | null
+          created_at?: string | null
+          id?: string
+          name: string
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          categories?: string[] | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "businesses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_responses: {
+        Row: {
+          ai_model_used: string | null
+          approval_status: string
+          created_at: string | null
+          id: string
+          response_text: string
+          review_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          ai_model_used?: string | null
+          approval_status?: string
+          created_at?: string | null
+          id?: string
+          response_text: string
+          review_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          ai_model_used?: string | null
+          approval_status?: string
+          created_at?: string | null
+          id?: string
+          response_text?: string
+          review_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_responses_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      response_edits: {
+        Row: {
+          created_at: string | null
+          edit_reason: string | null
+          edited_by: string
+          id: string
+          new_text: string
+          previous_text: string
+          response_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          edit_reason?: string | null
+          edited_by: string
+          id?: string
+          new_text: string
+          previous_text: string
+          response_id: string
+        }
+        Update: {
+          created_at?: string | null
+          edit_reason?: string | null
+          edited_by?: string
+          id?: string
+          new_text?: string
+          previous_text?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "response_edits_edited_by_fkey"
+            columns: ["edited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "response_edits_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "generated_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      response_templates: {
+        Row: {
+          body: string
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "response_templates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          business_id: string
+          created_at: string | null
+          id: string
+          rating: number
+          review_date: string | null
+          review_text: string
+          reviewer_name: string
+          sentiment: string | null
+          source_platform: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string | null
+          id?: string
+          rating: number
+          review_date?: string | null
+          review_text: string
+          reviewer_name: string
+          sentiment?: string | null
+          source_platform: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string | null
+          id?: string
+          rating?: number
+          review_date?: string | null
+          review_text?: string
+          reviewer_name?: string
+          sentiment?: string | null
+          source_platform?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
