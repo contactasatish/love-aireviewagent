@@ -24,21 +24,21 @@ const Header = ({ activeTab, onTabChange }: HeaderProps) => {
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="text-center flex-1">
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-full flex justify-end items-center gap-2 mb-4">
+            <ThemeToggle />
+            <LanguageToggle />
+            <Button variant="ghost" onClick={handleSignOut}>
+              {t("header.signOut")}
+            </Button>
+          </div>
+          <div className="text-center w-full">
             <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
               {t("header.title")}
             </h1>
             <p className="text-muted-foreground mt-2 text-sm md:text-base">
               {t("header.subtitle")}
             </p>
-          </div>
-          <div className="flex items-center gap-2 ml-4">
-            <ThemeToggle />
-            <LanguageToggle />
-            <Button variant="ghost" onClick={handleSignOut}>
-              {t("header.signOut")}
-            </Button>
           </div>
         </div>
         <div className="flex justify-center gap-2">

@@ -5,6 +5,7 @@ import { Review } from "./DashboardView";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ReviewListProps {
   reviews: Review[];
@@ -15,6 +16,7 @@ interface ReviewListProps {
 }
 
 const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefresh }: ReviewListProps) => {
+  const { t } = useTranslation();
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
 
   const getSourceColor = (source: string) => {
@@ -42,11 +44,11 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
 
       if (error) throw error;
 
-      toast.success("Review analyzed successfully!");
+      toast.success(t("dashboard.analyzeSuccess"));
       onRefresh();
     } catch (error: any) {
       console.error("Analysis error:", error);
-      toast.error(error.message || "Failed to analyze review");
+      toast.error(error.message || t("dashboard.analyzeFailed"));
     } finally {
       const newSet = new Set(analyzingIds);
       newSet.delete(review.id);
@@ -55,13 +57,13 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading reviews...</div>;
+    return <div className="text-center py-8">{t("dashboard.loading")}</div>;
   }
 
   if (reviews.length === 0) {
     return (
       <div className="text-center py-12 bg-muted/50 rounded-lg">
-        <p className="text-muted-foreground">No reviews found. Add some businesses and reviews to get started.</p>
+        <p className="text-muted-foreground">{t("dashboard.noReviewsFound")}</p>
       </div>
     );
   }
@@ -100,7 +102,7 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
               <div className="flex items-center gap-2">
                 {review.status === "pending" && (
                   <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-300">
-                    Needs Action
+                    {t("dashboard.needsAction")}
                   </Badge>
                 )}
                 {review.sentiment && (
@@ -126,7 +128,7 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
               className="shrink-0"
             >
               <Sparkles className="h-4 w-4 mr-2" />
-              {analyzingIds.has(review.id) ? "Analyzing..." : "Analyze"}
+              {analyzingIds.has(review.id) ? t("dashboard.analyzing") : t("dashboard.analyze")}
             </Button>
           </div>
         </div>

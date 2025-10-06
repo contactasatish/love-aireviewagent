@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import ReviewFilters from "./ReviewFilters";
 import ReviewList from "./ReviewList";
 
@@ -20,6 +21,7 @@ export interface Review {
 }
 
 const DashboardView = () => {
+  const { t } = useTranslation();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [businesses, setBusinesses] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -69,9 +71,9 @@ const DashboardView = () => {
 
   const filteredReviews = reviews.filter((review) => {
     if (selectedBusiness !== "all" && review.business_id !== selectedBusiness) return false;
-    if (selectedSource !== "all" && review.source_platform.toLowerCase() !== selectedSource.toLowerCase()) return false;
+    if (selectedSource !== "all" && review.source_platform.toLowerCase() !== selectedSource) return false;
     if (selectedRating !== "all" && review.rating !== parseInt(selectedRating)) return false;
-    if (selectedSentiment !== "all" && review.sentiment !== selectedSentiment) return false;
+    if (selectedSentiment !== "all" && review.sentiment?.toLowerCase() !== selectedSentiment) return false;
     return true;
   });
 
@@ -119,7 +121,7 @@ const DashboardView = () => {
               className="w-4 h-4 rounded border-border"
             />
             <span className="text-sm">
-              {needsActionCount} items need action. Select items or "Select All".
+              {needsActionCount} {t("dashboard.itemsNeedAction")}
             </span>
           </div>
         </div>
