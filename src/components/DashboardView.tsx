@@ -112,15 +112,15 @@ const DashboardView = () => {
       />
 
       {needsActionCount > 0 && (
-        <div className="bg-muted border border-border rounded-lg p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-between shadow-md">
+          <div className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={selectedReviews.size === filteredReviews.length && filteredReviews.length > 0}
               onChange={handleSelectAll}
-              className="w-4 h-4 rounded border-border"
+              className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
             />
-            <span className="text-sm">
+            <span className="text-sm font-medium text-foreground">
               {needsActionCount} {t("dashboard.itemsNeedAction")}
             </span>
           </div>

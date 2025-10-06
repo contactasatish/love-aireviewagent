@@ -30,15 +30,16 @@ const ReviewFilters = ({
   const sentiments = ["positive", "negative", "neutral"];
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+    <div className="bg-card border border-border rounded-xl p-6 shadow-lg">
       {/* Business Filter */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium min-w-[90px]">{t("dashboard.business")}:</span>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <span className="text-sm font-semibold text-foreground min-w-[100px]">{t("dashboard.business")}:</span>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={selectedBusiness === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedBusiness("all")}
+            className="rounded-lg"
           >
             {t("dashboard.all")}
           </Button>
@@ -48,6 +49,7 @@ const ReviewFilters = ({
               variant={selectedBusiness === business.id ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedBusiness(business.id)}
+              className="rounded-lg"
             >
               {business.name}
             </Button>
@@ -56,13 +58,14 @@ const ReviewFilters = ({
       </div>
 
       {/* Source Filter */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium min-w-[90px]">{t("dashboard.source")}:</span>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <span className="text-sm font-semibold text-foreground min-w-[100px]">{t("dashboard.source")}:</span>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={selectedSource === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedSource("all")}
+            className="rounded-lg"
           >
             {t("dashboard.all")}
           </Button>
@@ -72,6 +75,7 @@ const ReviewFilters = ({
               variant={selectedSource === source ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedSource(source)}
+              className="rounded-lg"
             >
               {source === "app store" ? t("dashboard.appStore") : source.charAt(0).toUpperCase() + source.slice(1)}
             </Button>
@@ -80,13 +84,14 @@ const ReviewFilters = ({
       </div>
 
       {/* Rating Filter */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium min-w-[90px]">{t("dashboard.rating")}:</span>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <span className="text-sm font-semibold text-foreground min-w-[100px]">{t("dashboard.rating")}:</span>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={selectedRating === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedRating("all")}
+            className="rounded-lg"
           >
             {t("dashboard.all")}
           </Button>
@@ -96,6 +101,7 @@ const ReviewFilters = ({
               variant={selectedRating === rating ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedRating(rating)}
+              className="rounded-lg"
             >
               {rating} ★
             </Button>
@@ -104,13 +110,14 @@ const ReviewFilters = ({
       </div>
 
       {/* Sentiment Filter */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium min-w-[90px]">{t("dashboard.sentiment")}:</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-semibold text-foreground min-w-[100px]">{t("dashboard.sentiment")}:</span>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={selectedSentiment === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedSentiment("all")}
+            className="rounded-lg"
           >
             {t("dashboard.all")}
           </Button>
@@ -120,6 +127,7 @@ const ReviewFilters = ({
               variant={selectedSentiment === sentiment ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedSentiment(sentiment)}
+              className="rounded-lg"
             >
               {t(`dashboard.${sentiment}`)}
             </Button>

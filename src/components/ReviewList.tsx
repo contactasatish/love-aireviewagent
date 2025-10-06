@@ -71,37 +71,39 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
   return (
     <div className="space-y-4">
       {reviews.map((review) => (
-        <div key={review.id} className="bg-card border border-border rounded-lg p-4">
+        <div key={review.id} className="bg-card border border-border rounded-xl p-5 shadow-md hover:shadow-lg transition-shadow">
           <div className="flex items-start gap-4">
             <input
               type="checkbox"
               checked={selectedReviews.has(review.id)}
               onChange={() => onSelectReview(review.id)}
-              className="mt-1 w-4 h-4 rounded border-border"
+              className="mt-1.5 w-4 h-4 rounded border-border accent-primary cursor-pointer"
             />
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge className={`${getSourceColor(review.source_platform)} text-white`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <Badge className={`${getSourceColor(review.source_platform)} text-white font-medium px-2.5 py-0.5`}>
                   {review.source_platform}
                 </Badge>
-                <span className="font-bold">{review.reviewer_name}</span>
-                <Badge variant="secondary">{review.businesses.name}</Badge>
-                <div className="flex text-yellow-500">
+                <span className="font-bold text-foreground">{review.reviewer_name}</span>
+                <Badge variant="secondary" className="bg-muted text-foreground font-medium">
+                  {review.businesses.name}
+                </Badge>
+                <div className="flex text-yellow-400">
                   {Array.from({ length: review.rating }).map((_, i) => (
-                    <span key={i}>★</span>
+                    <span key={i} className="text-lg">★</span>
                   ))}
                   {Array.from({ length: 5 - review.rating }).map((_, i) => (
-                    <span key={i} className="text-gray-400">★</span>
+                    <span key={i} className="text-lg text-gray-600">★</span>
                   ))}
                 </div>
                 <span className="ml-auto text-sm text-muted-foreground">
                   {new Date(review.review_date).toLocaleDateString()}
                 </span>
               </div>
-              <p className="text-sm mb-2">{review.review_text}</p>
-              <div className="flex items-center gap-2">
+              <p className="text-sm text-foreground mb-3 leading-relaxed">{review.review_text}</p>
+              <div className="flex items-center gap-2 flex-wrap">
                 {review.status === "pending" && (
-                  <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-300">
+                  <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30 font-medium">
                     {t("dashboard.needsAction")}
                   </Badge>
                 )}
@@ -110,10 +112,10 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
                     variant="outline"
                     className={
                       review.sentiment === "positive"
-                        ? "border-green-500 text-green-700 dark:text-green-300"
+                        ? "border-green-500 bg-green-500/10 text-green-600 dark:text-green-400 font-medium"
                         : review.sentiment === "negative"
-                        ? "border-red-500 text-red-700 dark:text-red-300"
-                        : "border-gray-500"
+                        ? "border-red-500 bg-red-500/10 text-red-600 dark:text-red-400 font-medium"
+                        : "border-gray-500 bg-gray-500/10 text-gray-600 dark:text-gray-400 font-medium"
                     }
                   >
                     {review.sentiment.charAt(0).toUpperCase() + review.sentiment.slice(1)}
@@ -122,10 +124,10 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
               </div>
             </div>
             <Button
-              size="sm"
+              size="lg"
               onClick={() => handleAnalyze(review)}
               disabled={analyzingIds.has(review.id)}
-              className="shrink-0"
+              className="shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               {analyzingIds.has(review.id) ? t("dashboard.analyzing") : t("dashboard.analyze")}

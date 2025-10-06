@@ -61,61 +61,72 @@ const AdminView = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Businesses</CardTitle>
-          <CardDescription>
+    <div className="space-y-8 max-w-4xl mx-auto">
+      <Card className="bg-card border-border shadow-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-bold text-foreground">Manage Businesses</CardTitle>
+          <CardDescription className="text-base text-muted-foreground">
             Add a business name to begin tracking and sourcing its reviews from various platforms.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAddBusiness} className="flex gap-2">
+          <form onSubmit={handleAddBusiness} className="flex gap-3">
             <Input
               placeholder="Enter business name"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               required
-              className="flex-1"
+              className="flex-1 bg-background border-input h-11"
             />
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8"
+            >
               Add Business
             </Button>
           </form>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Response Templates</CardTitle>
+      <Card className="bg-card border-border shadow-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-bold text-foreground">Manage Response Templates</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAddTemplate} className="space-y-4">
+          <form onSubmit={handleAddTemplate} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="templateName">Template Name</Label>
+              <Label htmlFor="templateName" className="text-sm font-semibold text-foreground">Template Name</Label>
               <Input
                 id="templateName"
                 placeholder="e.g., Positive Feedback"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
                 required
+                className="bg-background border-input h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="templateBody">Template Body</Label>
+              <Label htmlFor="templateBody" className="text-sm font-semibold text-foreground">Template Body</Label>
               <Textarea
                 id="templateBody"
                 placeholder="Template body..."
                 value={templateBody}
                 onChange={(e) => setTemplateBody(e.target.value)}
                 required
-                className="min-h-[150px]"
+                className="min-h-[180px] bg-background border-input resize-none"
               />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground pt-1">
                 Available placeholders: {"{customerName}"}, {"{businessName}"}, {"{intent}"}, {"{reviewText}"}
               </p>
             </div>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-8"
+            >
               Add Template
             </Button>
           </form>
