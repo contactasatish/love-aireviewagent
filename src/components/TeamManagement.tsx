@@ -1,12 +1,24 @@
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Trash2, Edit, UserPlus } from "lucide-react";
+
+const addUserSchema = z.object({
+  email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(72, { message: "Password must be less than 72 characters" }),
+});
+
+const updatePasswordSchema = z.object({
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(72, { message: "Password must be less than 72 characters" }),
+});
 
 interface TeamMember {
   id: string;
@@ -16,17 +28,24 @@ interface TeamMember {
 
 const TeamManagement = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   
-  // Add user form
-  const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  
-  // Edit user form
-  const [editPassword, setEditPassword] = useState("");
+  const addUserForm = useForm<z.infer<typeof addUserSchema>>({
+    resolver: zodResolver(addUserSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const updatePasswordForm = useForm<z.infer<typeof updatePasswordSchema>>({
+    resolver: zodResolver(updatePasswordSchema),
+    defaultValues: {
+      password: "",
+    },
+  });
 
   useEffect(() => {
     fetchMembers();
@@ -58,58 +77,47 @@ const TeamManagement = () => {
     }
   };
 
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+  const handleAddUser = async (values: z.infer<typeof addUserSchema>) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke('create-new-user', {
-        body: { email: newEmail, password: newPassword }
+        body: { email: values.email, password: values.password }
       });
 
       if (error) throw error;
 
       toast.success("User created successfully");
-      setNewEmail("");
-      setNewPassword("");
+      addUserForm.reset();
       setIsAddDialogOpen(false);
       fetchMembers();
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast.error(error.message || 'Failed to create user');
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdatePassword = async (values: z.infer<typeof updatePasswordSchema>) => {
     if (!selectedMember) return;
-    
-    setLoading(true);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke('update-user-password', {
-        body: { user_id: selectedMember.id, password: editPassword }
+        body: { user_id: selectedMember.id, password: values.password }
       });
 
       if (error) throw error;
 
       toast.success("Password updated successfully");
-      setEditPassword("");
+      updatePasswordForm.reset();
       setIsEditDialogOpen(false);
       setSelectedMember(null);
     } catch (error: any) {
       console.error('Error updating password:', error);
       toast.error(error.message || 'Failed to update password');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -117,8 +125,6 @@ const TeamManagement = () => {
     if (!confirm(`Are you sure you want to delete ${email}? This action cannot be undone.`)) {
       return;
     }
-
-    setLoading(true);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -135,8 +141,6 @@ const TeamManagement = () => {
     } catch (error: any) {
       console.error('Error deleting user:', error);
       toast.error(error.message || 'Failed to delete user');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -164,40 +168,53 @@ const TeamManagement = () => {
                   Create a new team member account with email and password.
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleAddUser}>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="user@example.com"
-                      value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      required
-                      className="bg-background border-input h-11"
+              <Form {...addUserForm}>
+                <form onSubmit={addUserForm.handleSubmit(handleAddUser)}>
+                  <div className="space-y-4 py-4">
+                    <FormField
+                      control={addUserForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="user@example.com"
+                              className="bg-background border-input h-11"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addUserForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="Enter password"
+                              className="bg-background border-input h-11"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="bg-background border-input h-11"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Creating..." : "Create User"}
-                  </Button>
-                </DialogFooter>
-              </form>
+                  <DialogFooter>
+                    <Button type="submit" disabled={addUserForm.formState.isSubmitting}>
+                      {addUserForm.formState.isSubmitting ? "Creating..." : "Create User"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>
@@ -234,7 +251,6 @@ const TeamManagement = () => {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDeleteUser(member.id, member.email)}
-                    disabled={loading}
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
@@ -253,28 +269,35 @@ const TeamManagement = () => {
                 Change the password for {selectedMember?.email}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleUpdatePassword}>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-password">New Password</Label>
-                  <Input
-                    id="edit-password"
-                    type="password"
-                    placeholder="Enter new password"
-                    value={editPassword}
-                    onChange={(e) => setEditPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="bg-background border-input h-11"
+            <Form {...updatePasswordForm}>
+              <form onSubmit={updatePasswordForm.handleSubmit(handleUpdatePassword)}>
+                <div className="space-y-4 py-4">
+                  <FormField
+                    control={updatePasswordForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>New Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="Enter new password"
+                            className="bg-background border-input h-11"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Updating..." : "Update Password"}
-                </Button>
-              </DialogFooter>
-            </form>
+                <DialogFooter>
+                  <Button type="submit" disabled={updatePasswordForm.formState.isSubmitting}>
+                    {updatePasswordForm.formState.isSubmitting ? "Updating..." : "Update Password"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </CardContent>
