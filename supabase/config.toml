@@ -1,1 +1,4 @@
 project_id = "gpskxbeimcxwgofpxxsm"
+
+[functions.analyze-review]
+verify_jwt = false
