@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,25 +12,27 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const authHeader = req.headers.get('Authorization')!;
-
-    // Create client with service role for admin operations
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Create client with user's token to verify they're authenticated
+    // Create clients
     const supabaseClient = createClient(
-      supabaseUrl,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
     );
 
-    // Get the authenticated user
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Verify the caller is an admin
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !user) {
-      console.error('User authentication failed:', userError);
+      console.error('Authentication error:', userError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -38,11 +40,15 @@ serve(async (req) => {
     }
 
     // Check if user has admin role
-    const { data: roleData, error: roleError } = await supabaseClient
-      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+    const { data: roles, error: roleError } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
 
-    if (roleError || !roleData) {
-      console.error('Role check failed:', roleError);
+    if (roleError || !roles) {
+      console.error('Role check error:', roleError);
       return new Response(
         JSON.stringify({ error: 'Forbidden: Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -59,15 +65,15 @@ serve(async (req) => {
       );
     }
 
-    // Create the new user using admin client
+    // Create new user with admin client
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm: true, // Auto-confirm email
     });
 
     if (createError) {
-      console.error('User creation failed:', createError);
+      console.error('User creation error:', createError);
       return new Response(
         JSON.stringify({ error: createError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -77,11 +83,14 @@ serve(async (req) => {
     // Assign 'member' role to the new user
     const { error: roleInsertError } = await supabaseAdmin
       .from('user_roles')
-      .insert({ user_id: newUser.user.id, role: 'member' });
+      .insert({
+        user_id: newUser.user.id,
+        role: 'member',
+      });
 
     if (roleInsertError) {
-      console.error('Role assignment failed:', roleInsertError);
-      // Try to delete the user if role assignment fails
+      console.error('Role assignment error:', roleInsertError);
+      // Clean up: delete the user if role assignment fails
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
       return new Response(
         JSON.stringify({ error: 'Failed to assign role to user' }),
@@ -89,16 +98,17 @@ serve(async (req) => {
       );
     }
 
-    console.log('User created successfully:', newUser.user.id);
+    console.log('Successfully created user:', newUser.user.id);
+
     return new Response(
       JSON.stringify({ user: newUser.user }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
-    console.error('Error in create-new-user function:', error);
+    console.error('Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

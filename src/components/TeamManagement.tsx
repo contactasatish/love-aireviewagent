@@ -5,8 +5,8 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { Trash2, KeyRound, UserPlus } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Trash2, Edit, UserPlus } from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -17,12 +17,16 @@ interface TeamMember {
 const TeamManagement = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
-  const [editUserId, setEditUserId] = useState<string | null>(null);
-  const [editPassword, setEditPassword] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  
+  // Add user form
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  
+  // Edit user form
+  const [editPassword, setEditPassword] = useState("");
 
   useEffect(() => {
     fetchMembers();
@@ -30,31 +34,27 @@ const TeamManagement = () => {
 
   const fetchMembers = async () => {
     try {
-      // Get all user roles with 'member' role
-      const { data: roleData, error: roleError } = await supabase
+      // Fetch all users with 'member' role
+      const { data: userRoles, error } = await supabase
         .from('user_roles')
         .select('user_id')
         .eq('role', 'member');
 
-      if (roleError) throw roleError;
-
-      if (!roleData || roleData.length === 0) {
-        setMembers([]);
-        return;
-      }
+      if (error) throw error;
 
       // Get user details from profiles
-      const { data: profilesData, error: profilesError } = await supabase
+      const userIds = userRoles.map(ur => ur.user_id);
+      const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, email, created_at')
-        .in('id', roleData.map(r => r.user_id));
+        .in('id', userIds);
 
-      if (profilesError) throw profilesError;
+      if (profileError) throw profileError;
 
-      setMembers(profilesData || []);
+      setMembers(profiles || []);
     } catch (error: any) {
       console.error('Error fetching members:', error);
-      toast.error("Failed to load team members");
+      toast.error('Failed to load team members');
     }
   };
 
@@ -67,19 +67,19 @@ const TeamManagement = () => {
       if (!session) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke('create-new-user', {
-        body: { email: newUserEmail, password: newUserPassword },
+        body: { email: newEmail, password: newPassword }
       });
 
       if (error) throw error;
 
       toast.success("User created successfully");
-      setNewUserEmail("");
-      setNewUserPassword("");
+      setNewEmail("");
+      setNewPassword("");
       setIsAddDialogOpen(false);
       fetchMembers();
     } catch (error: any) {
       console.error('Error creating user:', error);
-      toast.error(error.message || "Failed to create user");
+      toast.error(error.message || 'Failed to create user');
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ const TeamManagement = () => {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editUserId) return;
+    if (!selectedMember) return;
     
     setLoading(true);
 
@@ -95,26 +95,26 @@ const TeamManagement = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const { error } = await supabase.functions.invoke('update-user-password', {
-        body: { user_id: editUserId, password: editPassword },
+      const { data, error } = await supabase.functions.invoke('update-user-password', {
+        body: { user_id: selectedMember.id, password: editPassword }
       });
 
       if (error) throw error;
 
       toast.success("Password updated successfully");
       setEditPassword("");
-      setEditUserId(null);
       setIsEditDialogOpen(false);
+      setSelectedMember(null);
     } catch (error: any) {
       console.error('Error updating password:', error);
-      toast.error(error.message || "Failed to update password");
+      toast.error(error.message || 'Failed to update password');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Are you sure you want to delete ${email}? This action cannot be undone.`)) {
       return;
     }
 
@@ -124,8 +124,8 @@ const TeamManagement = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const { error } = await supabase.functions.invoke('delete-user', {
-        body: { user_id: userId },
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: userId }
       });
 
       if (error) throw error;
@@ -134,7 +134,7 @@ const TeamManagement = () => {
       fetchMembers();
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      toast.error(error.message || "Failed to delete user");
+      toast.error(error.message || 'Failed to delete user');
     } finally {
       setLoading(false);
     }
@@ -147,134 +147,136 @@ const TeamManagement = () => {
           <div>
             <CardTitle className="text-2xl font-bold text-foreground">Team Management</CardTitle>
             <CardDescription className="text-base text-muted-foreground">
-              Manage team members and their access
+              Manage user accounts and permissions
             </CardDescription>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <UserPlus className="mr-2 h-4 w-4" />
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <UserPlus className="mr-2 h-5 w-5" />
                 Add New User
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border">
+            <DialogContent>
               <DialogHeader>
-                <DialogTitle className="text-foreground">Create New Team Member</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Enter the email and password for the new team member
+                <DialogTitle>Add New User</DialogTitle>
+                <DialogDescription>
+                  Create a new team member account with email and password.
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleAddUser} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="user@example.com"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    required
-                    className="bg-background border-input"
-                  />
+              <form onSubmit={handleAddUser}>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="user@example.com"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      required
+                      className="bg-background border-input h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="bg-background border-input h-11"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-foreground">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter password"
-                    value={newUserPassword}
-                    onChange={(e) => setNewUserPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="bg-background border-input"
-                  />
-                </div>
-                <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90">
-                  {loading ? "Creating..." : "Create User"}
-                </Button>
+                <DialogFooter>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Creating..." : "Create User"}
+                  </Button>
+                </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
         </div>
       </CardHeader>
       <CardContent>
-        {members.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No team members yet. Add your first member to get started.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {members.map((member) => (
+        <div className="space-y-4">
+          {members.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">No team members yet</p>
+          ) : (
+            members.map((member) => (
               <div
                 key={member.id}
                 className="flex items-center justify-between p-4 rounded-lg border border-border bg-background/50"
               >
-                <div className="flex-1">
+                <div>
                   <p className="font-medium text-foreground">{member.email}</p>
                   <p className="text-sm text-muted-foreground">
-                    Added {new Date(member.created_at).toLocaleDateString()}
+                    Joined {new Date(member.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Dialog open={isEditDialogOpen && editUserId === member.id} onOpenChange={(open) => {
-                    setIsEditDialogOpen(open);
-                    if (!open) {
-                      setEditUserId(null);
-                      setEditPassword("");
-                    }
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditUserId(member.id)}
-                        className="bg-background border-input"
-                      >
-                        <KeyRound className="h-4 w-4 mr-2" />
-                        Change Password
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-card border-border">
-                      <DialogHeader>
-                        <DialogTitle className="text-foreground">Update Password</DialogTitle>
-                        <DialogDescription className="text-muted-foreground">
-                          Enter a new password for {member.email}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleUpdatePassword} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-password" className="text-foreground">New Password</Label>
-                          <Input
-                            id="edit-password"
-                            type="password"
-                            placeholder="Enter new password"
-                            value={editPassword}
-                            onChange={(e) => setEditPassword(e.target.value)}
-                            required
-                            minLength={6}
-                            className="bg-background border-input"
-                          />
-                        </div>
-                        <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90">
-                          {loading ? "Updating..." : "Update Password"}
-                        </Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedMember(member);
+                      setIsEditDialogOpen(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDeleteUser(member.id)}
+                    onClick={() => handleDeleteUser(member.id, member.email)}
                     disabled={loading}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
                   </Button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Update Password</DialogTitle>
+              <DialogDescription>
+                Change the password for {selectedMember?.email}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdatePassword}>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-password">New Password</Label>
+                  <Input
+                    id="edit-password"
+                    type="password"
+                    placeholder="Enter new password"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="bg-background border-input h-11"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Updating..." : "Update Password"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
