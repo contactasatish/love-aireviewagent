@@ -7,6 +7,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import SourceManagement from "./SourceManagement";
+import TeamManagement from "./TeamManagement";
 
 const AdminView = () => {
   const [businessName, setBusinessName] = useState("");
@@ -63,6 +64,8 @@ const AdminView = () => {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+      <TeamManagement />
+      
       <SourceManagement />
       
       <Card className="bg-card border-border shadow-xl">

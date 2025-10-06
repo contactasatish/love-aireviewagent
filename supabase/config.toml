@@ -2,3 +2,12 @@ project_id = "gpskxbeimcxwgofpxxsm"
 
 [functions.analyze-review]
 verify_jwt = false
+
+[functions.create-new-user]
+verify_jwt = true
+
+[functions.update-user-password]
+verify_jwt = true
+
+[functions.delete-user]
+verify_jwt = true
