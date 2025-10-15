@@ -10,10 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
+import logo from "@/assets/logo.png";
 
 const signInSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
@@ -78,6 +79,13 @@ const Auth = () => {
       </div>
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
+          <button 
+            onClick={() => navigate("/")}
+            className="mx-auto mb-4 hover:opacity-80 transition-opacity"
+            aria-label="Back to home"
+          >
+            <img src={logo} alt="AI Review Assistant" className="w-20 h-20 mx-auto" />
+          </button>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             {t("auth.title")}
           </CardTitle>
@@ -154,6 +162,16 @@ const Auth = () => {
               className="text-sm text-primary hover:underline"
             >
               {isLogin ? t("auth.noAccount") : t("auth.hasAccount")}
+            </button>
+          </div>
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mx-auto"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              Back to Home
             </button>
           </div>
         </CardContent>
