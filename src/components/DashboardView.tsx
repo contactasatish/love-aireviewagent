@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import ReviewFilters from "./ReviewFilters";
 import ReviewList from "./ReviewList";
+import dashboardBanner from "@/assets/dashboard-banner.jpg";
 
 export interface Review {
   id: string;
@@ -99,6 +100,13 @@ const DashboardView = () => {
 
   return (
     <div className="space-y-6">
+      <div className="w-full h-32 rounded-lg overflow-hidden mb-8">
+        <img 
+          src={dashboardBanner} 
+          alt="Dashboard analytics and review management" 
+          className="w-full h-full object-cover"
+        />
+      </div>
       <ReviewFilters
         businesses={businesses}
         selectedBusiness={selectedBusiness}

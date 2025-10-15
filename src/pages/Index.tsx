@@ -4,6 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Sparkles, BarChart3, Link2 } from "lucide-react";
 import FeatureSection from "@/components/FeatureSection";
+import heroImage from "@/assets/hero-ai-analysis.jpg";
+import analyzeImage from "@/assets/feature-analyze.jpg";
+import generateImage from "@/assets/feature-generate.jpg";
+import dashboardImage from "@/assets/feature-dashboard.jpg";
+import connectImage from "@/assets/feature-connect.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,8 +24,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="flex min-h-[70vh] items-center justify-center px-4 py-16">
-        <div className="text-center space-y-8 max-w-4xl">
+      <div className="relative flex min-h-[70vh] items-center justify-center px-4 py-16 overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center opacity-20">
+          <img 
+            src={heroImage} 
+            alt="AI-powered data analysis visualization" 
+            className="w-full h-full object-contain max-w-4xl"
+          />
+        </div>
+        <div className="relative text-center space-y-8 max-w-4xl z-10">
           <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent">
             AI Review Assistant
           </h1>
@@ -48,21 +60,25 @@ const Index = () => {
             icon={MessageSquare}
             title="Analyze and Summarize Customer Reviews"
             description="Automatically analyze customer sentiment and extract key insights from reviews across all platforms in seconds."
+            image={analyzeImage}
           />
           <FeatureSection
             icon={Sparkles}
             title="Generate AI-Powered Review Responses"
             description="Create personalized, professional responses to customer reviews with AI assistance, maintaining your brand voice."
+            image={generateImage}
           />
           <FeatureSection
             icon={BarChart3}
             title="View Your Sentiment Analysis Dashboard"
             description="Get comprehensive insights into customer sentiment trends, ratings distribution, and key performance metrics."
+            image={dashboardImage}
           />
           <FeatureSection
             icon={Link2}
             title="Connect Your Review Collection Platforms"
             description="Seamlessly integrate with Google Business, Facebook, Yelp, TripAdvisor, and more to centralize all your reviews."
+            image={connectImage}
           />
         </div>
       </div>

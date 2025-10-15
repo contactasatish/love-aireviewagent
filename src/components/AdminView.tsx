@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import SourceManagement from "./SourceManagement";
 import TeamManagement from "./TeamManagement";
+import adminBanner from "@/assets/admin-banner.jpg";
 
 const businessSchema = z.object({
   name: z.string().trim().min(1, { message: "Business name is required" }).max(100, { message: "Business name must be less than 100 characters" }),
@@ -74,6 +75,13 @@ const AdminView = () => {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+      <div className="w-full h-32 rounded-lg overflow-hidden mb-8">
+        <img 
+          src={adminBanner} 
+          alt="Admin panel settings and configuration" 
+          className="w-full h-full object-cover"
+        />
+      </div>
       <TeamManagement />
       
       <SourceManagement />
