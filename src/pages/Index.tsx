@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Sparkles, BarChart3, Link2 } from "lucide-react";
 import FeatureSection from "@/components/FeatureSection";
+import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
 import heroImage from "@/assets/hero-ai-analysis.jpg";
 import analyzeImage from "@/assets/feature-analyze.jpg";
 import generateImage from "@/assets/feature-generate.jpg";
@@ -23,6 +25,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header with Theme and Language toggles */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
+        <ThemeToggle />
+        <LanguageToggle />
+      </div>
+      
       {/* Hero Section */}
       <div className="relative flex min-h-[70vh] items-center justify-center px-4 py-16 overflow-hidden">
         <div className="absolute inset-0 flex items-center justify-center opacity-20">

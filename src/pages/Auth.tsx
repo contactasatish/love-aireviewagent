@@ -12,8 +12,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import ThemeToggle from "@/components/ThemeToggle";
-import LanguageToggle from "@/components/LanguageToggle";
 import logo from "@/assets/logo.png";
 
 const signInSchema = z.object({
@@ -73,10 +71,6 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="absolute top-4 right-4 flex gap-2">
-        <ThemeToggle />
-        <LanguageToggle />
-      </div>
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <button 
