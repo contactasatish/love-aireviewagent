@@ -11,3 +11,9 @@ verify_jwt = true
 
 [functions.delete-user]
 verify_jwt = true
+
+[functions.initiate-google-oauth]
+verify_jwt = true
+
+[functions.google-oauth-callback]
+verify_jwt = false

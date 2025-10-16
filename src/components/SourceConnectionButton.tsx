@@ -90,13 +90,52 @@ const SourceConnectionButton = ({
 
       if (error) throw error;
 
-      // TODO: Redirect to OAuth authorization URL
-      toast.info(`${sourceName} OAuth flow will be implemented soon`);
-      await fetchConnection();
+      // Get OAuth URL from edge function
+      const { data, error: functionError } = await supabase.functions.invoke(
+        'initiate-google-oauth',
+        {
+          body: { businessId, sourceId }
+        }
+      );
+
+      if (functionError) throw functionError;
+
+      // Open OAuth window
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const oauthWindow = window.open(
+        data.authUrl,
+        'Google OAuth',
+        `width=${width},height=${height},left=${left},top=${top}`
+      );
+
+      // Listen for OAuth success message
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data?.type === 'oauth-success') {
+          window.removeEventListener('message', messageHandler);
+          toast.success(`${sourceName} connected successfully`);
+          fetchConnection();
+          setLoading(false);
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+
+      // Check if window was closed without completing OAuth
+      const checkClosed = setInterval(() => {
+        if (oauthWindow?.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageHandler);
+          setLoading(false);
+        }
+      }, 1000);
+
     } catch (error: any) {
       console.error("OAuth error:", error);
       toast.error(`Failed to initiate ${sourceName} connection`);
-    } finally {
       setLoading(false);
     }
   };
