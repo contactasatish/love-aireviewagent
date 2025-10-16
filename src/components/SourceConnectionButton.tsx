@@ -39,9 +39,10 @@ const SourceConnectionButton = ({
   }, [isEnabled, businessId, sourceId]);
 
   const fetchConnection = async () => {
+    // Only select non-sensitive fields to prevent token exposure
     const { data, error } = await supabase
       .from("source_connections")
-      .select("*")
+      .select("id, status, connection_type, token_expires_at, metadata, created_at, updated_at")
       .eq("business_id", businessId)
       .eq("source_id", sourceId)
       .maybeSingle();

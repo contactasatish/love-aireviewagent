@@ -45,8 +45,40 @@ serve(async (req) => {
       );
     }
 
-    // Decode state to get businessId and sourceId
-    const { businessId, sourceId } = JSON.parse(atob(state));
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Validate state token from database
+    const { data: oauthState, error: stateError } = await supabase
+      .from('oauth_states')
+      .select('*')
+      .eq('state_token', state)
+      .eq('used', false)
+      .single();
+
+    if (stateError || !oauthState) {
+      console.error('Invalid or expired OAuth state:', state);
+      return new Response(
+        `<html><body><script>window.close();</script><p>Invalid or expired authorization request. Please try again.</p></body></html>`,
+        { headers: { 'Content-Type': 'text/html' } }
+      );
+    }
+
+    // Check if state has expired
+    if (new Date(oauthState.expires_at) < new Date()) {
+      console.error('OAuth state expired:', state);
+      return new Response(
+        `<html><body><script>window.close();</script><p>Authorization request expired. Please try again.</p></body></html>`,
+        { headers: { 'Content-Type': 'text/html' } }
+      );
+    }
+
+    const { user_id: userId, business_id: businessId, source_id: sourceId } = oauthState;
+
+    // Mark state as used
+    await supabase
+      .from('oauth_states')
+      .update({ used: true })
+      .eq('state_token', state);
 
     // Exchange authorization code for tokens
     const redirectUri = `${SUPABASE_URL}/functions/v1/google-oauth-callback`;
@@ -74,14 +106,10 @@ serve(async (req) => {
     const tokens = await tokenResponse.json();
     const { access_token, refresh_token, expires_in } = tokens;
 
-    // Get the authenticated user from the Authorization header
-    const authHeader = req.headers.get('Authorization');
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     // Calculate token expiry
     const expiresAt = new Date(Date.now() + expires_in * 1000).toISOString();
 
-    // Update or insert the connection record
+    // Update or insert the connection record with user validation
     const { error: dbError } = await supabase
       .from('source_connections')
       .update({
@@ -92,7 +120,8 @@ serve(async (req) => {
         updated_at: new Date().toISOString(),
       })
       .eq('business_id', businessId)
-      .eq('source_id', sourceId);
+      .eq('source_id', sourceId)
+      .eq('user_id', userId);
 
     if (dbError) {
       console.error('Database update error:', dbError);

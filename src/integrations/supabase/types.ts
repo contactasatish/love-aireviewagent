@@ -132,6 +132,39 @@ export type Database = {
           },
         ]
       }
+      oauth_states: {
+        Row: {
+          business_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          source_id: string
+          state_token: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          source_id: string
+          state_token: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          source_id?: string
+          state_token?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -412,6 +445,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_oauth_states: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

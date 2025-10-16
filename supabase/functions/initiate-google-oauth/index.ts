@@ -23,8 +23,9 @@ serve(async (req) => {
 
     const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    if (!GOOGLE_CLIENT_ID || !SUPABASE_URL) {
+    if (!GOOGLE_CLIENT_ID || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error('Missing required environment variables');
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
@@ -32,11 +33,52 @@ serve(async (req) => {
       );
     }
 
+    // Get authenticated user from JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    // Generate cryptographically secure state token
+    const stateToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store state in database
+    const { error: insertError } = await supabase
+      .from('oauth_states')
+      .insert({
+        user_id: user.id,
+        business_id: businessId,
+        source_id: sourceId,
+        state_token: stateToken,
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (insertError) {
+      console.error('Failed to store OAuth state:', insertError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to initiate OAuth flow' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
     const redirectUri = `${SUPABASE_URL}/functions/v1/google-oauth-callback`;
     
-    // Store businessId and sourceId in state parameter to retrieve after callback
-    const state = btoa(JSON.stringify({ businessId, sourceId }));
-
+    // Use secure state token in OAuth URL
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', redirectUri);
@@ -44,9 +86,9 @@ serve(async (req) => {
     authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/business.manage');
     authUrl.searchParams.set('access_type', 'offline');
     authUrl.searchParams.set('prompt', 'consent');
-    authUrl.searchParams.set('state', state);
+    authUrl.searchParams.set('state', stateToken);
 
-    console.log('Generated OAuth URL:', authUrl.toString());
+    console.log('Generated secure OAuth URL for user:', user.id, 'business:', businessId);
 
     return new Response(
       JSON.stringify({ authUrl: authUrl.toString() }),
