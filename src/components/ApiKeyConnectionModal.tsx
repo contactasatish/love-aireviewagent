@@ -40,16 +40,25 @@ const ApiKeyConnectionModal = ({
       }
 
       // Store the connection with encrypted credentials
-      const { error } = await supabase.from("source_connections").upsert({
-        business_id: businessId,
-        source_id: sourceId,
-        user_id: user.id,
-        connection_type: "api_key",
-        status: "connected",
-        encrypted_credentials: JSON.stringify({ api_key: apiKey, api_secret: apiSecret }),
-      });
+      const { error } = await supabase.from("source_connections").upsert(
+        {
+          business_id: businessId,
+          source_id: sourceId,
+          user_id: user.id,
+          connection_type: "api_key",
+          status: "connected",
+          encrypted_credentials: JSON.stringify({ api_key: apiKey, api_secret: apiSecret }),
+        },
+        {
+          onConflict: 'business_id,source_id',
+        }
+      );
 
-      if (error) throw error;
+      if (error) {
+        console.error('Connection error:', error);
+        toast.error("Failed to save connection");
+        return;
+      }
 
       toast.success(`${sourceName} connected successfully`);
       onConnectionSuccess();
@@ -57,8 +66,8 @@ const ApiKeyConnectionModal = ({
       setApiKey("");
       setApiSecret("");
     } catch (error: any) {
-      console.error("Connection error:", error);
-      toast.error(`Failed to connect ${sourceName}`);
+      console.error("Unexpected error:", error);
+      toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);
     }

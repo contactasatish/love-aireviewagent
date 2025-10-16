@@ -81,15 +81,24 @@ const SourceConnectionButton = ({
       }
 
       // Create a pending connection record
-      const { error } = await supabase.from("source_connections").upsert({
-        business_id: businessId,
-        source_id: sourceId,
-        user_id: user.id,
-        connection_type: "oauth",
-        status: "pending",
-      });
+      const { error } = await supabase.from("source_connections").upsert(
+        {
+          business_id: businessId,
+          source_id: sourceId,
+          user_id: user.id,
+          connection_type: "oauth",
+          status: "pending",
+        },
+        {
+          onConflict: 'business_id,source_id',
+        }
+      );
 
-      if (error) throw error;
+      if (error) {
+        console.error('Connection creation error:', error);
+        toast.error("Failed to initiate connection");
+        return;
+      }
 
       // Get OAuth URL from edge function
       const { data, error: functionError } = await supabase.functions.invoke(

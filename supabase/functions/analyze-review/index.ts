@@ -54,8 +54,7 @@ serve(async (req) => {
     });
 
     if (!sentimentResponse.ok) {
-      const errorText = await sentimentResponse.text();
-      console.error("Sentiment analysis error:", sentimentResponse.status, errorText);
+      console.error("Sentiment analysis error - Status:", sentimentResponse.status);
       
       if (sentimentResponse.status === 429) {
         return new Response(
@@ -70,7 +69,10 @@ serve(async (req) => {
         );
       }
       
-      throw new Error("Sentiment analysis failed");
+      return new Response(
+        JSON.stringify({ error: "Failed to analyze sentiment" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const sentimentData = await sentimentResponse.json();
@@ -101,9 +103,11 @@ serve(async (req) => {
     });
 
     if (!responseGeneration.ok) {
-      const errorText = await responseGeneration.text();
-      console.error("Response generation error:", responseGeneration.status, errorText);
-      throw new Error("Response generation failed");
+      console.error("Response generation error - Status:", responseGeneration.status);
+      return new Response(
+        JSON.stringify({ error: "Failed to generate response" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const responseData = await responseGeneration.json();
@@ -123,7 +127,10 @@ serve(async (req) => {
 
     if (updateError) {
       console.error("Error updating review:", updateError);
-      throw updateError;
+      return new Response(
+        JSON.stringify({ error: "Failed to update review" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Save generated response
@@ -138,7 +145,10 @@ serve(async (req) => {
 
     if (responseError) {
       console.error("Error saving response:", responseError);
-      throw responseError;
+      return new Response(
+        JSON.stringify({ error: "Failed to save response" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("Analysis complete for review:", reviewId);
@@ -149,7 +159,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in analyze-review function:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

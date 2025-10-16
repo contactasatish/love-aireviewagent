@@ -39,24 +39,33 @@ const UrlConnectionModal = ({
       }
 
       // Store the URL connection
-      const { error } = await supabase.from("source_connections").upsert({
-        business_id: businessId,
-        source_id: sourceId,
-        user_id: user.id,
-        connection_type: "url",
-        status: "connected",
-        metadata: { url },
-      });
+      const { error } = await supabase.from("source_connections").upsert(
+        {
+          business_id: businessId,
+          source_id: sourceId,
+          user_id: user.id,
+          connection_type: "url",
+          status: "connected",
+          metadata: { url },
+        },
+        {
+          onConflict: 'business_id,source_id',
+        }
+      );
 
-      if (error) throw error;
+      if (error) {
+        console.error('Connection error:', error);
+        toast.error("Failed to save connection");
+        return;
+      }
 
       toast.success(`${sourceName} product page linked successfully`);
       onConnectionSuccess();
       onClose();
       setUrl("");
     } catch (error: any) {
-      console.error("Connection error:", error);
-      toast.error(`Failed to link ${sourceName} product page`);
+      console.error("Unexpected error:", error);
+      toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
