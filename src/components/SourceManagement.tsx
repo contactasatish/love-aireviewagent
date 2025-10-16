@@ -6,6 +6,7 @@ import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import { Loader2 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import SourceConnectionButton from "./SourceConnectionButton";
 
 interface Source {
   id: string;
@@ -186,6 +187,7 @@ const SourceManagement = () => {
             <div className="space-y-3">
               {sources.map((source) => {
                 const Icon = getIcon(source.icon);
+                const isEnabled = enabledSources.has(source.id);
                 return (
                   <div
                     key={source.id}
@@ -197,10 +199,18 @@ const SourceManagement = () => {
                       </div>
                       <span className="font-medium text-foreground">{source.display_name}</span>
                     </div>
-                    <Switch
-                      checked={enabledSources.has(source.id)}
-                      onCheckedChange={(checked) => toggleSource(source.id, checked)}
-                    />
+                    <div className="flex items-center gap-3">
+                      <SourceConnectionButton
+                        sourceId={source.id}
+                        sourceName={source.display_name}
+                        businessId={selectedBusiness}
+                        isEnabled={isEnabled}
+                      />
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={(checked) => toggleSource(source.id, checked)}
+                      />
+                    </div>
                   </div>
                 );
               })}

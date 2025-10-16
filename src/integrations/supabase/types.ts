@@ -296,6 +296,69 @@ export type Database = {
           },
         ]
       }
+      source_connections: {
+        Row: {
+          business_id: string
+          connection_type: string
+          created_at: string | null
+          encrypted_credentials: string | null
+          id: string
+          metadata: Json | null
+          oauth_refresh_token: string | null
+          oauth_token: string | null
+          source_id: string
+          status: string
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          connection_type: string
+          created_at?: string | null
+          encrypted_credentials?: string | null
+          id?: string
+          metadata?: Json | null
+          oauth_refresh_token?: string | null
+          oauth_token?: string | null
+          source_id: string
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          connection_type?: string
+          created_at?: string | null
+          encrypted_credentials?: string | null
+          id?: string
+          metadata?: Json | null
+          oauth_refresh_token?: string | null
+          oauth_token?: string | null
+          source_id?: string
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_connections_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_connections_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sources: {
         Row: {
           created_at: string
