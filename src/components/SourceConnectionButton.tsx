@@ -77,6 +77,7 @@ const SourceConnectionButton = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Not authenticated");
+        setLoading(false);
         return;
       }
 
@@ -97,6 +98,7 @@ const SourceConnectionButton = ({
       if (error) {
         console.error('Connection creation error:', error);
         toast.error("Failed to initiate connection");
+        setLoading(false);
         return;
       }
 
@@ -108,40 +110,15 @@ const SourceConnectionButton = ({
         }
       );
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        console.error("OAuth function error:", functionError);
+        toast.error(`Failed to initiate ${sourceName} connection`);
+        setLoading(false);
+        return;
+      }
 
-      // Open OAuth window
-      const width = 600;
-      const height = 700;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      const oauthWindow = window.open(
-        data.authUrl,
-        'Google OAuth',
-        `width=${width},height=${height},left=${left},top=${top}`
-      );
-
-      // Listen for OAuth success message
-      const messageHandler = (event: MessageEvent) => {
-        if (event.data?.type === 'oauth-success') {
-          window.removeEventListener('message', messageHandler);
-          toast.success(`${sourceName} connected successfully`);
-          fetchConnection();
-          setLoading(false);
-        }
-      };
-
-      window.addEventListener('message', messageHandler);
-
-      // Check if window was closed without completing OAuth
-      const checkClosed = setInterval(() => {
-        if (oauthWindow?.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageHandler);
-          setLoading(false);
-        }
-      }, 1000);
+      // Redirect to Google OAuth page
+      window.location.href = data.authUrl;
 
     } catch (error: any) {
       console.error("OAuth error:", error);

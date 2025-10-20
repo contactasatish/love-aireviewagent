@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import DashboardView from "@/components/DashboardView";
 import AdminView from "@/components/AdminView";
@@ -13,6 +14,20 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<"dashboard" | "admin">("dashboard");
 
   useEffect(() => {
+    // Check for OAuth callback
+    const params = new URLSearchParams(window.location.search);
+    const oauthStatus = params.get('oauth');
+    
+    if (oauthStatus === 'success') {
+      toast.success('Source connected successfully');
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard');
+    } else if (oauthStatus === 'error') {
+      toast.error('Failed to connect source');
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard');
+    }
+    
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
