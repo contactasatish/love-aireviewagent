@@ -19,12 +19,7 @@ interface Connection {
   connection_type: string;
 }
 
-const SourceConnectionButton = ({
-  sourceId,
-  sourceName,
-  businessId,
-  isEnabled,
-}: SourceConnectionButtonProps) => {
+const SourceConnectionButton = ({ sourceId, sourceName, businessId, isEnabled }: SourceConnectionButtonProps) => {
   const [connection, setConnection] = useState<Connection | null>(null);
   const [loading, setLoading] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
@@ -45,9 +40,9 @@ const SourceConnectionButton = ({
         fetchConnection();
       }
     };
-    
-    window.addEventListener('oauth-connection-success', handleOAuthSuccess);
-    return () => window.removeEventListener('oauth-connection-success', handleOAuthSuccess);
+
+    window.addEventListener("oauth-connection-success", handleOAuthSuccess);
+    return () => window.removeEventListener("oauth-connection-success", handleOAuthSuccess);
   }, [isEnabled, businessId, sourceId]);
 
   const fetchConnection = async () => {
@@ -69,13 +64,10 @@ const SourceConnectionButton = ({
 
   const handleConnect = () => {
     const sourceNameLower = sourceName.toLowerCase();
-    
+
     if (sourceNameLower === "amazon") {
       setShowUrlModal(true);
-    } else if (
-      sourceNameLower === "google business" ||
-      sourceNameLower === "facebook"
-    ) {
+    } else if (sourceNameLower === "google business" || sourceNameLower === "facebook") {
       initiateOAuthFlow();
     } else {
       // Trustpilot, Yelp, TripAdvisor
@@ -86,7 +78,9 @@ const SourceConnectionButton = ({
   const initiateOAuthFlow = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Not authenticated");
         setLoading(false);
@@ -103,24 +97,21 @@ const SourceConnectionButton = ({
           status: "pending",
         },
         {
-          onConflict: 'business_id,source_id',
-        }
+          onConflict: "business_id,source_id",
+        },
       );
 
       if (error) {
-        console.error('Connection creation error:', error);
+        console.error("Connection creation error:", error);
         toast.error("Failed to initiate connection");
         setLoading(false);
         return;
       }
 
       // Get OAuth URL from edge function
-      const { data, error: functionError } = await supabase.functions.invoke(
-        'initiate-google-oauth',
-        {
-          body: { businessId, sourceId }
-        }
-      );
+      const { data, error: functionError } = await supabase.functions.invoke("initiate-google-oauth", {
+        body: { businessId, sourceId },
+      });
 
       if (functionError) {
         console.error("OAuth function error:", functionError);
@@ -130,11 +121,7 @@ const SourceConnectionButton = ({
       }
 
       // Open OAuth in popup window
-      const popup = window.open(
-        data.authUrl,
-        'oauth-popup',
-        'width=600,height=700,left=200,top=100'
-      );
+      const popup = window.open(data.authUrl, "oauth-popup", "width=600,height=700,left=200,top=100");
 
       if (!popup) {
         toast.error("Please allow popups for this site");
@@ -144,35 +131,38 @@ const SourceConnectionButton = ({
 
       // Listen for message from popup
       const handleMessage = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        
-        if (event.data.type === 'auth-success' && event.data.service === 'google') {
-          window.removeEventListener('message', handleMessage);
-          popup.close(); // Parent window closes the popup
-          toast.success('Source connected successfully');
+        // Accept messages from both the app origin and Supabase origin
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+        const supabaseOrigin = new URL(supabaseUrl).origin;
+
+        if (event.origin !== window.location.origin && event.origin !== supabaseOrigin) return;
+
+        if (event.data.type === "auth-success" && event.data.service === "google") {
+          window.removeEventListener("message", handleMessage);
+          popup.close();
+          toast.success("Source connected successfully");
           fetchConnection();
           setLoading(false);
-        } else if (event.data.type === 'auth-error') {
-          window.removeEventListener('message', handleMessage);
-          popup.close(); // Parent window closes the popup
-          toast.error('Failed to connect source');
+        } else if (event.data.type === "auth-error") {
+          window.removeEventListener("message", handleMessage);
+          popup.close();
+          toast.error("Failed to connect source");
           setLoading(false);
         }
       };
 
-      window.addEventListener('message', handleMessage);
+      window.addEventListener("message", handleMessage);
 
       // Clean up listener if popup is closed manually
       const checkPopup = setInterval(() => {
         if (popup.closed) {
           clearInterval(checkPopup);
-          window.removeEventListener('message', handleMessage);
+          window.removeEventListener("message", handleMessage);
           // Re-fetch connection status when popup closes
           fetchConnection();
           setLoading(false);
         }
       }, 500);
-
     } catch (error: any) {
       console.error("OAuth error:", error);
       toast.error(`Failed to initiate ${sourceName} connection`);
@@ -185,10 +175,7 @@ const SourceConnectionButton = ({
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("source_connections")
-        .delete()
-        .eq("id", connection.id);
+      const { error } = await supabase.from("source_connections").delete().eq("id", connection.id);
 
       if (error) throw error;
 
@@ -209,18 +196,8 @@ const SourceConnectionButton = ({
   return (
     <div className="flex items-center gap-2">
       {!isConnected ? (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleConnect}
-          disabled={loading}
-          className="gap-2"
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <LinkIcon className="h-4 w-4" />
-          )}
+        <Button size="sm" variant="outline" onClick={handleConnect} disabled={loading} className="gap-2">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
           {sourceName === "Amazon" ? "Link Product Page" : "Connect"}
         </Button>
       ) : (
