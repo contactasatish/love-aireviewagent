@@ -38,6 +38,18 @@ const SourceConnectionButton = ({
     }
   }, [isEnabled, businessId, sourceId]);
 
+  // Listen for OAuth success event to refresh connection status
+  useEffect(() => {
+    const handleOAuthSuccess = () => {
+      if (isEnabled && businessId) {
+        fetchConnection();
+      }
+    };
+    
+    window.addEventListener('oauth-connection-success', handleOAuthSuccess);
+    return () => window.removeEventListener('oauth-connection-success', handleOAuthSuccess);
+  }, [isEnabled, businessId, sourceId]);
+
   const fetchConnection = async () => {
     // Only select non-sensitive fields to prevent token exposure
     const { data, error } = await supabase

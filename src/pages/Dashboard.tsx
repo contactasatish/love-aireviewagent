@@ -20,6 +20,8 @@ const Dashboard = () => {
     
     if (oauthStatus === 'success') {
       toast.success('Source connected successfully');
+      // Trigger refresh event for source connections
+      window.dispatchEvent(new CustomEvent('oauth-connection-success'));
       // Clean up URL
       window.history.replaceState({}, '', '/dashboard');
     } else if (oauthStatus === 'error') {
