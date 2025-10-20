@@ -27,7 +27,7 @@ serve(async (req) => {
       return new Response(
         `<html><body><script>
           if (window.opener) {
-            window.opener.postMessage({ type: 'auth-error', service: 'google' }, *);
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, '*');
           }
         </script><p>Authorization failed. Closing...</p></body></html>`,
         { headers: { "Content-Type": "text/html" } },
@@ -38,7 +38,7 @@ serve(async (req) => {
       return new Response(
         `<html><body><script>
           if (window.opener) {
-            window.opener.postMessage({ type: 'auth-error', service: 'google' }, *);
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, '*');
           }
         </script><p>Missing authorization code. Closing...</p></body></html>`,
         { headers: { "Content-Type": "text/html" } },
@@ -50,7 +50,7 @@ serve(async (req) => {
       return new Response(
         `<html><body><script>
           if (window.opener) {
-            window.opener.postMessage({ type: 'auth-error', service: 'google' }, *);
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, '*');
           }
         </script><p>Server configuration error. Closing...</p></body></html>`,
         { headers: { "Content-Type": "text/html" } },
@@ -72,7 +72,7 @@ serve(async (req) => {
       return new Response(
         `<html><body><script>
           if (window.opener) {
-            window.opener.postMessage({ type: 'auth-error', service: 'google' }, *);
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, '*');
           }
         </script><p>Invalid or expired authorization request. Closing...</p></body></html>`,
         { headers: { "Content-Type": "text/html" } },
@@ -85,7 +85,7 @@ serve(async (req) => {
       return new Response(
         `<html><body><script>
           if (window.opener) {
-            window.opener.postMessage({ type: 'auth-error', service: 'google' }, *);
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, '*');
           }
         </script><p>Authorization request expired. Closing...</p></body></html>`,
         { headers: { "Content-Type": "text/html" } },
@@ -114,13 +114,12 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error("Token exchange failed:", errorText);
-      // Send success message to opener window
       return new Response(
         `<html><body><script>
-    if (window.opener) {
-      window.opener.postMessage({ type: 'auth-error', service: 'google' }, *);
-    }
-  </script><p>Authorization successful! Closing...</p></body></html>`,
+          if (window.opener) {
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, '*');
+          }
+        </script><p>Failed to exchange authorization code. Closing...</p></body></html>`,
         { headers: { "Content-Type": "text/html" } },
       );
     }
@@ -150,7 +149,7 @@ serve(async (req) => {
       return new Response(
         `<html><body><script>
           if (window.opener) {
-            window.opener.postMessage({ type: 'auth-error', service: 'google' }, *);
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, '*');
           }
         </script><p>Failed to save connection. Closing...</p></body></html>`,
         { headers: { "Content-Type": "text/html" } },
@@ -163,7 +162,7 @@ serve(async (req) => {
     return new Response(
       `<html><body><script>
         if (window.opener) {
-          window.opener.postMessage({ type: 'auth-success', service: 'google' }, *);
+          window.opener.postMessage({ type: 'auth-success', service: 'google' }, '*');
         }
       </script><p>Authorization successful! Closing...</p></body></html>`,
       { headers: { "Content-Type": "text/html" } },
@@ -173,7 +172,7 @@ serve(async (req) => {
     return new Response(
       `<html><body><script>
         if (window.opener) {
-          window.opener.postMessage({ type: 'auth-error', service: 'google' }, *);
+          window.opener.postMessage({ type: 'auth-error', service: 'google' }, '*');
         }
       </script><p>An error occurred. Closing...</p></body></html>`,
       { headers: { "Content-Type": "text/html" } },
