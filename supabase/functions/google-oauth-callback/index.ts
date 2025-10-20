@@ -24,28 +24,38 @@ serve(async (req) => {
 
     if (error) {
       console.error('OAuth error:', error);
-      const dashboardUrl = new URL('/dashboard', SUPABASE_URL!.replace('.supabase.co', '.lovable.app'));
-      dashboardUrl.searchParams.set('oauth', 'error');
       return new Response(
-        `<html><body><script>window.location.href = '${dashboardUrl.toString()}';</script><p>Authorization failed. Redirecting...</p></body></html>`,
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
+            window.close();
+          }
+        </script><p>Authorization failed. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     }
 
     if (!code || !state) {
-      const dashboardUrl = new URL('/dashboard', SUPABASE_URL!.replace('.supabase.co', '.lovable.app'));
-      dashboardUrl.searchParams.set('oauth', 'error');
       return new Response(
-        `<html><body><script>window.location.href = '${dashboardUrl.toString()}';</script><p>Missing authorization code. Redirecting...</p></body></html>`,
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
+            window.close();
+          }
+        </script><p>Missing authorization code. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     }
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error('Missing required environment variables');
-      const dashboardUrl = '/dashboard?oauth=error';
       return new Response(
-        `<html><body><script>window.location.href = '${dashboardUrl}';</script><p>Server configuration error. Redirecting...</p></body></html>`,
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
+            window.close();
+          }
+        </script><p>Server configuration error. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     }
@@ -62,9 +72,13 @@ serve(async (req) => {
 
     if (stateError || !oauthState) {
       console.error('Invalid or expired OAuth state:', state);
-      const dashboardUrl = '/dashboard?oauth=error';
       return new Response(
-        `<html><body><script>window.location.href = '${dashboardUrl}';</script><p>Invalid or expired authorization request. Redirecting...</p></body></html>`,
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
+            window.close();
+          }
+        </script><p>Invalid or expired authorization request. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     }
@@ -72,9 +86,13 @@ serve(async (req) => {
     // Check if state has expired
     if (new Date(oauthState.expires_at) < new Date()) {
       console.error('OAuth state expired:', state);
-      const dashboardUrl = '/dashboard?oauth=error';
       return new Response(
-        `<html><body><script>window.location.href = '${dashboardUrl}';</script><p>Authorization request expired. Redirecting...</p></body></html>`,
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
+            window.close();
+          }
+        </script><p>Authorization request expired. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     }
@@ -104,9 +122,13 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('Token exchange failed:', errorText);
-      const dashboardUrl = '/dashboard?oauth=error';
       return new Response(
-        `<html><body><script>window.location.href = '${dashboardUrl}';</script><p>Failed to exchange authorization code. Redirecting...</p></body></html>`,
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
+            window.close();
+          }
+        </script><p>Failed to exchange authorization code. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     }
@@ -133,29 +155,38 @@ serve(async (req) => {
 
     if (dbError) {
       console.error('Database update error:', dbError);
-      const dashboardUrl = '/dashboard?oauth=error';
       return new Response(
-        `<html><body><script>window.location.href = '${dashboardUrl}';</script><p>Failed to save connection. Redirecting...</p></body></html>`,
+        `<html><body><script>
+          if (window.opener) {
+            window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
+            window.close();
+          }
+        </script><p>Failed to save connection. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     }
 
     console.log('Google OAuth connection successful for business:', businessId);
 
-    // Redirect back to dashboard with success indicator
-    const dashboardUrl = new URL('/dashboard', SUPABASE_URL.replace('.supabase.co', '.lovable.app'));
-    dashboardUrl.searchParams.set('oauth', 'success');
-    dashboardUrl.searchParams.set('source', sourceId);
-    
+    // Send success message to opener window and close popup
     return new Response(
-      `<html><body><script>window.location.href = '${dashboardUrl.toString()}';</script><p>Authorization successful! Redirecting...</p></body></html>`,
+      `<html><body><script>
+        if (window.opener) {
+          window.opener.postMessage({ type: 'auth-success', service: 'google' }, window.location.origin);
+          window.close();
+        }
+      </script><p>Authorization successful! Closing...</p></body></html>`,
       { headers: { 'Content-Type': 'text/html' } }
     );
   } catch (error) {
     console.error('Error in google-oauth-callback:', error);
-    const dashboardUrl = '/dashboard?oauth=error';
     return new Response(
-      `<html><body><script>window.location.href = '${dashboardUrl}';</script><p>An error occurred. Redirecting...</p></body></html>`,
+      `<html><body><script>
+        if (window.opener) {
+          window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
+          window.close();
+        }
+      </script><p>An error occurred. Closing...</p></body></html>`,
       { headers: { 'Content-Type': 'text/html' } }
     );
   }

@@ -129,8 +129,45 @@ const SourceConnectionButton = ({
         return;
       }
 
-      // Redirect to Google OAuth page
-      window.location.href = data.authUrl;
+      // Open OAuth in popup window
+      const popup = window.open(
+        data.authUrl,
+        'oauth-popup',
+        'width=600,height=700,left=200,top=100'
+      );
+
+      if (!popup) {
+        toast.error("Please allow popups for this site");
+        setLoading(false);
+        return;
+      }
+
+      // Listen for message from popup
+      const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data.type === 'auth-success' && event.data.service === 'google') {
+          window.removeEventListener('message', handleMessage);
+          toast.success('Source connected successfully');
+          fetchConnection();
+          setLoading(false);
+        } else if (event.data.type === 'auth-error') {
+          window.removeEventListener('message', handleMessage);
+          toast.error('Failed to connect source');
+          setLoading(false);
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+
+      // Clean up listener if popup is closed manually
+      const checkPopup = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', handleMessage);
+          setLoading(false);
+        }
+      }, 1000);
 
     } catch (error: any) {
       console.error("OAuth error:", error);
