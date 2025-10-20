@@ -165,9 +165,11 @@ const SourceConnectionButton = ({
         if (popup.closed) {
           clearInterval(checkPopup);
           window.removeEventListener('message', handleMessage);
+          // Re-fetch connection status when popup closes
+          fetchConnection();
           setLoading(false);
         }
-      }, 1000);
+      }, 500);
 
     } catch (error: any) {
       console.error("OAuth error:", error);
