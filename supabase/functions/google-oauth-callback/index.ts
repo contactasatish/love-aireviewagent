@@ -28,7 +28,6 @@ serve(async (req) => {
         `<html><body><script>
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
-            window.close();
           }
         </script><p>Authorization failed. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
@@ -40,7 +39,6 @@ serve(async (req) => {
         `<html><body><script>
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
-            window.close();
           }
         </script><p>Missing authorization code. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
@@ -53,7 +51,6 @@ serve(async (req) => {
         `<html><body><script>
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
-            window.close();
           }
         </script><p>Server configuration error. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
@@ -76,7 +73,6 @@ serve(async (req) => {
         `<html><body><script>
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
-            window.close();
           }
         </script><p>Invalid or expired authorization request. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
@@ -90,7 +86,6 @@ serve(async (req) => {
         `<html><body><script>
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
-            window.close();
           }
         </script><p>Authorization request expired. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
@@ -126,7 +121,6 @@ serve(async (req) => {
         `<html><body><script>
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
-            window.close();
           }
         </script><p>Failed to exchange authorization code. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
@@ -159,7 +153,6 @@ serve(async (req) => {
         `<html><body><script>
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
-            window.close();
           }
         </script><p>Failed to save connection. Closing...</p></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
@@ -168,12 +161,11 @@ serve(async (req) => {
 
     console.log('Google OAuth connection successful for business:', businessId);
 
-    // Send success message to opener window and close popup
+    // Send success message to opener window
     return new Response(
       `<html><body><script>
         if (window.opener) {
           window.opener.postMessage({ type: 'auth-success', service: 'google' }, window.location.origin);
-          window.close();
         }
       </script><p>Authorization successful! Closing...</p></body></html>`,
       { headers: { 'Content-Type': 'text/html' } }
@@ -184,7 +176,6 @@ serve(async (req) => {
       `<html><body><script>
         if (window.opener) {
           window.opener.postMessage({ type: 'auth-error', service: 'google' }, window.location.origin);
-          window.close();
         }
       </script><p>An error occurred. Closing...</p></body></html>`,
       { headers: { 'Content-Type': 'text/html' } }

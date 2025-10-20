@@ -148,11 +148,13 @@ const SourceConnectionButton = ({
         
         if (event.data.type === 'auth-success' && event.data.service === 'google') {
           window.removeEventListener('message', handleMessage);
+          popup.close(); // Parent window closes the popup
           toast.success('Source connected successfully');
           fetchConnection();
           setLoading(false);
         } else if (event.data.type === 'auth-error') {
           window.removeEventListener('message', handleMessage);
+          popup.close(); // Parent window closes the popup
           toast.error('Failed to connect source');
           setLoading(false);
         }
