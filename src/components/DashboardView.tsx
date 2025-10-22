@@ -12,6 +12,7 @@ export interface Review {
   review_text: string;
   rating: number;
   source_platform: string;
+  source_id: string; // ADD THIS
   status: string;
   sentiment: string | null;
   review_date: string;
@@ -38,11 +39,8 @@ const DashboardView = () => {
   }, []);
 
   const fetchBusinesses = async () => {
-    const { data, error } = await supabase
-      .from("businesses")
-      .select("id, name")
-      .order("name");
-    
+    const { data, error } = await supabase.from("businesses").select("id, name").order("name");
+
     if (error) {
       toast.error("Failed to fetch businesses");
       return;
@@ -54,10 +52,12 @@ const DashboardView = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("reviews")
-      .select(`
+      .select(
+        `
         *,
         businesses (name)
-      `)
+      `,
+      )
       .order("review_date", { ascending: false });
 
     if (error) {
@@ -72,19 +72,19 @@ const DashboardView = () => {
 
   const filteredReviews = reviews.filter((review) => {
     if (selectedBusiness !== "all" && review.business_id !== selectedBusiness) return false;
-    if (selectedSource !== "all" && review.source_platform.toLowerCase() !== selectedSource) return false;
+    if (selectedSource !== "all" && review.source_id !== selectedSource) return false;
     if (selectedRating !== "all" && review.rating !== parseInt(selectedRating)) return false;
     if (selectedSentiment !== "all" && review.sentiment?.toLowerCase() !== selectedSentiment) return false;
     return true;
   });
 
-  const needsActionCount = filteredReviews.filter(r => r.status === "pending").length;
+  const needsActionCount = filteredReviews.filter((r) => r.status === "pending").length;
 
   const handleSelectAll = () => {
     if (selectedReviews.size === filteredReviews.length) {
       setSelectedReviews(new Set());
     } else {
-      setSelectedReviews(new Set(filteredReviews.map(r => r.id)));
+      setSelectedReviews(new Set(filteredReviews.map((r) => r.id)));
     }
   };
 
@@ -101,9 +101,9 @@ const DashboardView = () => {
   return (
     <div className="space-y-6">
       <div className="w-full h-32 rounded-lg overflow-hidden mb-8">
-        <img 
-          src={dashboardBanner} 
-          alt="Dashboard analytics and review management" 
+        <img
+          src={dashboardBanner}
+          alt="Dashboard analytics and review management"
           className="w-full h-full object-cover"
         />
       </div>
