@@ -131,7 +131,6 @@ const SourceConnectionButton = ({ sourceId, sourceName, businessId, isEnabled }:
 
       // Listen for message from popup
       const handleMessage = (event: MessageEvent) => {
-        // Accept messages from both the app origin and Supabase origin
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
         const supabaseOrigin = new URL(supabaseUrl).origin;
 
@@ -139,13 +138,16 @@ const SourceConnectionButton = ({ sourceId, sourceName, businessId, isEnabled }:
 
         if (event.data.type === "auth-success" && event.data.service === "google") {
           window.removeEventListener("message", handleMessage);
-          popup.close();
+          // Force close popup multiple times for reliability
+          setTimeout(() => popup.close(), 50);
+          setTimeout(() => popup.close(), 100);
+          setTimeout(() => popup.close(), 200);
           toast.success("Source connected successfully");
           fetchConnection();
           setLoading(false);
         } else if (event.data.type === "auth-error") {
           window.removeEventListener("message", handleMessage);
-          popup.close();
+          setTimeout(() => popup.close(), 50);
           toast.error("Failed to connect source");
           setLoading(false);
         }
