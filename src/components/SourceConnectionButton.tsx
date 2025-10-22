@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ApiKeyConnectionModal from "./ApiKeyConnectionModal";
 import UrlConnectionModal from "./UrlConnectionModal";
+import SyncReviewsButton from "./SyncReviewsButton";
 
 interface SourceConnectionButtonProps {
   sourceId: string;
@@ -208,6 +209,15 @@ const SourceConnectionButton = ({ sourceId, sourceName, businessId, isEnabled }:
             <Check className="h-4 w-4 text-green-500" />
             Connected
           </span>
+          {/* NEW: Add Sync Reviews Button for Google Business */}
+          {sourceName.toLowerCase() === "google business" && (
+            <SyncReviewsButton
+              businessId={businessId}
+              sourceId={sourceId}
+              sourceName={sourceName}
+              isConnected={isConnected}
+            />
+          )}
           <Button
             size="sm"
             variant="ghost"
