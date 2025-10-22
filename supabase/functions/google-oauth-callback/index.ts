@@ -179,6 +179,37 @@ serve(async (req) => {
 
     console.log("Google OAuth connection successful for business:", businessId);
 
+    // AUTO-TRIGGER: Fetch reviews immediately after successful connection
+    try {
+      const fetchReviewsResponse = await fetch(`${SUPABASE_URL}/functions/v1/fetch-google-reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ businessId, sourceId }),
+      });
+
+      const fetchResult = await fetchReviewsResponse.json();
+      console.log("Auto-fetch reviews result:", fetchResult);
+    } catch (fetchError) {
+      // Don't fail the OAuth if review fetching fails
+      console.error("Error auto-fetching reviews:", fetchError);
+    }
+
+    // Send success message to opener window
+    return new Response(
+      `<html><body><script>
+        if (window.opener) {
+          window.opener.postMessage({ type: 'auth-success', service: 'google' }, '*');
+        }
+        setTimeout(() => {
+          window.close();
+        }, 100);
+      </script><p>Authorization successful! Closing...</p></body></html>`,
+      { headers: { "Content-Type": "text/html" } },
+    );
+
     // Send success message to opener window
     return new Response(
       `<html><body><script>
