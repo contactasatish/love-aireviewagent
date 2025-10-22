@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.google-oauth-callback]
 verify_jwt = false
+
+[functions.fetch-google-reviews]
+verify_jwt = true
