@@ -44,11 +44,8 @@ const ReviewFilters = ({
   const fetchEnabledSources = async () => {
     if (selectedBusiness === "all") {
       // Fetch all sources for "all" businesses
-      const { data, error } = await supabase
-        .from("sources")
-        .select("*")
-        .order("display_name");
-      
+      const { data, error } = await supabase.from("sources").select("*").order("display_name");
+
       if (!error && data) {
         setAvailableSources(data);
       }
@@ -56,19 +53,19 @@ const ReviewFilters = ({
       // Fetch only enabled sources for selected business
       const { data, error } = await supabase
         .from("enabled_sources")
-        .select(`
+        .select(
+          `
           sources (
             id,
             name,
             display_name
           )
-        `)
+        `,
+        )
         .eq("business_id", selectedBusiness);
-      
+
       if (!error && data) {
-        const sources = data
-          .map((item: any) => item.sources)
-          .filter((source): source is Source => source !== null);
+        const sources = data.map((item: any) => item.sources).filter((source): source is Source => source !== null);
         setAvailableSources(sources);
       }
     }
@@ -119,7 +116,7 @@ const ReviewFilters = ({
               key={source.id}
               variant={selectedSource === source.name ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedSource(source.name)}
+              onClick={() => setSelectedSource(source.id)}
               className="rounded-lg"
             >
               {source.display_name}
