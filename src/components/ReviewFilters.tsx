@@ -114,9 +114,9 @@ const ReviewFilters = ({
           {availableSources.map((source) => (
             <Button
               key={source.id}
-              variant={selectedSource === source.id ? "default" : "outline"}
+              variant={selectedSource === source.display_name ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedSource(source.id)}
+              onClick={() => setSelectedSource(source.display_name)}
               className="rounded-lg"
             >
               {source.display_name}
