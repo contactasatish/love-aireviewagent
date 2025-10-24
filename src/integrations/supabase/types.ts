@@ -57,6 +57,7 @@ export type Database = {
           business_id: string
           created_at: string
           id: string
+          location_id: string | null
           source_id: string
           updated_at: string
           user_id: string
@@ -65,6 +66,7 @@ export type Database = {
           business_id: string
           created_at?: string
           id?: string
+          location_id?: string | null
           source_id: string
           updated_at?: string
           user_id: string
@@ -73,6 +75,7 @@ export type Database = {
           business_id?: string
           created_at?: string
           id?: string
+          location_id?: string | null
           source_id?: string
           updated_at?: string
           user_id?: string
@@ -273,12 +276,14 @@ export type Database = {
         Row: {
           business_id: string
           created_at: string | null
+          external_review_id: string | null
           id: string
           rating: number
           review_date: string | null
           review_text: string
           reviewer_name: string
           sentiment: string | null
+          source_id: string | null
           source_platform: string
           status: string
           updated_at: string | null
@@ -287,12 +292,14 @@ export type Database = {
         Insert: {
           business_id: string
           created_at?: string | null
+          external_review_id?: string | null
           id?: string
           rating: number
           review_date?: string | null
           review_text: string
           reviewer_name: string
           sentiment?: string | null
+          source_id?: string | null
           source_platform: string
           status?: string
           updated_at?: string | null
@@ -301,12 +308,14 @@ export type Database = {
         Update: {
           business_id?: string
           created_at?: string | null
+          external_review_id?: string | null
           id?: string
           rating?: number
           review_date?: string | null
           review_text?: string
           reviewer_name?: string
           sentiment?: string | null
+          source_id?: string | null
           source_platform?: string
           status?: string
           updated_at?: string | null
@@ -318,6 +327,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
             referencedColumns: ["id"]
           },
           {
@@ -445,10 +461,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_expired_oauth_states: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_oauth_states: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
