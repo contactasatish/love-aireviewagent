@@ -60,16 +60,16 @@ const DashboardView = () => {
       .from("reviews")
       .select(
         `
-      *,
-      businesses (name),
-      generated_responses (
-        id,
-        response_text,
-        approval_status,
-        ai_model_used,
-        created_at
-      )
-    `,
+        *,
+        businesses (name),
+        generated_responses (
+          id,
+          response_text,
+          approval_status,
+          ai_model_used,
+          created_at
+        )
+      `,
       )
       .order("review_date", { ascending: false });
 
@@ -84,10 +84,26 @@ const DashboardView = () => {
   };
 
   const filteredReviews = reviews.filter((review) => {
-    if (selectedBusiness !== "all" && review.business_id !== selectedBusiness) return false;
-    if (selectedSource !== "all" && review.source_platform !== selectedSource) return false;
-    if (selectedRating !== "all" && review.rating !== parseInt(selectedRating)) return false;
-    if (selectedSentiment !== "all" && review.sentiment?.toLowerCase() !== selectedSentiment) return false;
+    // Business filter
+    if (selectedBusiness !== "all" && review.business_id !== selectedBusiness) {
+      return false;
+    }
+
+    // Source filter (case-insensitive)
+    if (selectedSource !== "all" && review.source_platform.toLowerCase() !== selectedSource.toLowerCase()) {
+      return false;
+    }
+
+    // Rating filter
+    if (selectedRating !== "all" && review.rating !== parseInt(selectedRating)) {
+      return false;
+    }
+
+    // Sentiment filter
+    if (selectedSentiment !== "all" && review.sentiment?.toLowerCase() !== selectedSentiment) {
+      return false;
+    }
+
     return true;
   });
 
