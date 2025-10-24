@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.fetch-google-reviews]
 verify_jwt = true
+
+[functions.post-review-response]
+verify_jwt = true
