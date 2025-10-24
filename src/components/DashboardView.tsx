@@ -60,16 +60,16 @@ const DashboardView = () => {
       .from("reviews")
       .select(
         `
-        *,
-        businesses (name),
-        generated_responses (
-          id,
-          response_text,
-          approval_status,
-          ai_model_used,
-          created_at
-        )
-      `,
+      *,
+      businesses (name),
+      generated_responses (
+        id,
+        response_text,
+        approval_status,
+        ai_model_used,
+        created_at
+      )
+    `,
       )
       .order("review_date", { ascending: false });
 
