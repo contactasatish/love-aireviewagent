@@ -54,7 +54,9 @@ export type Database = {
       }
       enabled_sources: {
         Row: {
+          account_name: string | null
           business_id: string
+          connected: boolean | null
           created_at: string
           id: string
           location_id: string | null
@@ -63,7 +65,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_name?: string | null
           business_id: string
+          connected?: boolean | null
           created_at?: string
           id?: string
           location_id?: string | null
@@ -72,7 +76,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_name?: string | null
           business_id?: string
+          connected?: boolean | null
           created_at?: string
           id?: string
           location_id?: string | null

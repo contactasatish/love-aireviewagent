@@ -165,10 +165,10 @@ const SourceManagement = () => {
       if (error) throw error;
 
       await supabase
-        .from("oauth_connections")
+        .from("source_connections")
         .update({ status: "disconnected" })
         .eq("business_id", selectedBusiness)
-        .eq("provider", "google");
+        .eq("source_id", sourceId);
 
       toast.success("Disconnected successfully");
       fetchEnabledSources();
