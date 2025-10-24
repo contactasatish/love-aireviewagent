@@ -1,6 +1,6 @@
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Sparkles, Check, Edit, X } from "lucide-react";
+import { Sparkles, Check, Edit, X, RefreshCw } from "lucide-react";
 import { Review } from "./DashboardView";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const [editingResponseId, setEditingResponseId] = useState<string | null>(null);
   const [editedText, setEditedText] = useState<string>("");
+  const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
 
   const getSourceColor = (source: string) => {
     const colors: Record<string, string> = {
@@ -41,6 +42,7 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
           reviewId: review.id,
           reviewText: review.review_text,
           rating: review.rating,
+          reviewerName: review.reviewer_name, // Pass reviewer name
         },
       });
 
@@ -58,20 +60,45 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
     }
   };
 
-  const handleApprove = async (responseId: string) => {
+  const handleApproveAndPost = async (review: Review, responseId: string, responseText: string) => {
+    setApprovingIds(new Set(approvingIds).add(responseId));
+
     try {
-      const { error } = await supabase
+      // First, update the approval status
+      const { error: approvalError } = await supabase
         .from("generated_responses")
         .update({ approval_status: "approved" })
         .eq("id", responseId);
 
-      if (error) throw error;
+      if (approvalError) throw approvalError;
 
-      toast.success("Response approved successfully!");
+      // Then, post to Google (if Google Business)
+      if (review.source_platform.toLowerCase() === "google business") {
+        const { data, error: postError } = await supabase.functions.invoke("post-review-response", {
+          body: {
+            reviewId: review.id,
+            responseText: responseText,
+          },
+        });
+
+        if (postError) {
+          console.error("Failed to post to Google:", postError);
+          toast.error("Response approved but failed to post to Google. You can post it manually.");
+        } else {
+          toast.success("Response approved and posted to Google!");
+        }
+      } else {
+        toast.success("Response approved! (Manual posting required for this platform)");
+      }
+
       onRefresh();
     } catch (error: any) {
       console.error("Approve error:", error);
       toast.error("Failed to approve response");
+    } finally {
+      const newSet = new Set(approvingIds);
+      newSet.delete(responseId);
+      setApprovingIds(newSet);
     }
   };
 
@@ -81,10 +108,18 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
   };
 
   const handleSaveEdit = async (responseId: string) => {
+    if (!editedText.trim()) {
+      toast.error("Response cannot be empty");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("generated_responses")
-        .update({ response_text: editedText })
+        .update({
+          response_text: editedText,
+          approval_status: "pending", // Reset to pending after edit
+        })
         .eq("id", responseId);
 
       if (error) throw error;
@@ -113,11 +148,26 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
 
       if (error) throw error;
 
-      toast.success("Response rejected");
+      toast.success("Response rejected. Click 'Regenerate' to create a new one.");
       onRefresh();
     } catch (error: any) {
       console.error("Reject error:", error);
       toast.error("Failed to reject response");
+    }
+  };
+
+  const handleRegenerate = async (review: Review, responseId: string) => {
+    try {
+      // Delete the old rejected response
+      const { error: deleteError } = await supabase.from("generated_responses").delete().eq("id", responseId);
+
+      if (deleteError) throw deleteError;
+
+      // Trigger new analysis
+      await handleAnalyze(review);
+    } catch (error: any) {
+      console.error("Regenerate error:", error);
+      toast.error("Failed to regenerate response");
     }
   };
 
@@ -244,39 +294,64 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
                       <p className="text-sm text-foreground leading-relaxed mb-3">
                         {review.generated_responses[0].response_text}
                       </p>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleApprove(review.generated_responses![0].id)}
-                          disabled={review.generated_responses[0].approval_status === "approved"}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Approve & Post
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            handleStartEdit(
-                              review.generated_responses![0].id,
-                              review.generated_responses![0].response_text,
-                            )
-                          }
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleReject(review.generated_responses![0].id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                      </div>
+
+                      {review.generated_responses[0].approval_status === "rejected" ? (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleRegenerate(review, review.generated_responses![0].id)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-1" />
+                            Regenerate
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              handleApproveAndPost(
+                                review,
+                                review.generated_responses![0].id,
+                                review.generated_responses![0].response_text,
+                              )
+                            }
+                            disabled={
+                              review.generated_responses[0].approval_status === "approved" ||
+                              approvingIds.has(review.generated_responses![0].id)
+                            }
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            {approvingIds.has(review.generated_responses![0].id) ? "Posting..." : "Approve & Post"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleStartEdit(
+                                review.generated_responses![0].id,
+                                review.generated_responses![0].response_text,
+                              )
+                            }
+                            disabled={review.generated_responses[0].approval_status === "approved"}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleReject(review.generated_responses![0].id)}
+                            disabled={review.generated_responses[0].approval_status === "approved"}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
