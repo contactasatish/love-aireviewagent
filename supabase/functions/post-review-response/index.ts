@@ -15,53 +15,78 @@ serve(async (req) => {
     const { reviewId, responseText } = await req.json();
 
     if (!reviewId || !responseText) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 
-    // Get review details with external_review_id
+    // Get review details
     const { data: review, error: reviewError } = await supabase
       .from("reviews")
-      .select(`
-        *,
-        sources!inner(business_id),
-        businesses!inner(id)
-      `)
+      .select("*, businesses(id)")
       .eq("id", reviewId)
       .single();
 
     if (reviewError || !review) {
+      console.error("Review fetch error:", reviewError);
+      return new Response(JSON.stringify({ error: "Review not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check if this review has Google metadata (external_review_id)
+    if (!review.external_review_id) {
+      console.log("Review does not have external_review_id - cannot post to Google");
       return new Response(
-        JSON.stringify({ error: "Review not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "This review was not fetched from Google and cannot be posted back",
+          isTestReview: true,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     // Get OAuth token for this business
     const { data: connection, error: connectionError } = await supabase
       .from("oauth_connections")
-      .select("access_token, account_id")
+      .select("access_token, refresh_token, account_id")
       .eq("business_id", review.businesses.id)
       .eq("provider", "google")
+      .eq("status", "active")
       .single();
 
     if (connectionError || !connection) {
-      return new Response(
-        JSON.stringify({ error: "Google account not connected" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("OAuth connection error:", connectionError);
+      return new Response(JSON.stringify({ error: "Google account not connected or token expired" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Post reply to Google My Business API
+    // Get location from enabled_sources
+    const { data: source, error: sourceError } = await supabase
+      .from("enabled_sources")
+      .select("location_id")
+      .eq("business_id", review.businesses.id)
+      .eq("source_id", review.source_id)
+      .single();
+
+    if (sourceError || !source || !source.location_id) {
+      console.error("Location not found:", sourceError);
+      return new Response(JSON.stringify({ error: "Google Business location not configured" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Post reply using Google Business Profile API (current version)
+    const locationPath = `accounts/${connection.account_id}/locations/${source.location_id}`;
     const googleResponse = await fetch(
-      `https://mybusiness.googleapis.com/v4/accounts/${connection.account_id}/locations/${review.external_location_id}/reviews/${review.external_review_id}/reply`,
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${locationPath}/reviews/${review.external_review_id}:updateReply`,
       {
         method: "PUT",
         headers: {
@@ -71,29 +96,43 @@ serve(async (req) => {
         body: JSON.stringify({
           comment: responseText,
         }),
-      }
+      },
     );
 
     if (!googleResponse.ok) {
       const errorText = await googleResponse.text();
-      console.error("Google API error:", errorText);
+      console.error("Google API error:", googleResponse.status, errorText);
+
+      // If token expired, try to refresh
+      if (googleResponse.status === 401) {
+        return new Response(JSON.stringify({ error: "Google token expired. Please reconnect your account." }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       return new Response(
-        JSON.stringify({ error: "Failed to post response to Google" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "Failed to post response to Google",
+          details: errorText,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     console.log("Successfully posted response to Google for review:", reviewId);
-    
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+
+    // Update the review status
+    await supabase.from("reviews").update({ status: "posted" }).eq("id", reviewId);
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error in post-review-response function:", error);
-    return new Response(
-      JSON.stringify({ error: "An unexpected error occurred" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "An unexpected error occurred" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
