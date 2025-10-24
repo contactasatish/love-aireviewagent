@@ -42,7 +42,7 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
           reviewId: review.id,
           reviewText: review.review_text,
           rating: review.rating,
-          reviewerName: review.reviewer_name, // Pass reviewer name
+          reviewerName: review.reviewer_name,
         },
       });
 
@@ -83,9 +83,31 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
 
         if (postError) {
           console.error("Failed to post to Google:", postError);
-          toast.error("Response approved but failed to post to Google. You can post it manually.");
+
+          // Check the type of error and show appropriate message
+          const errorMessage = postError.message || "";
+
+          if (
+            errorMessage.includes("test review") ||
+            errorMessage.includes("not fetched from Google") ||
+            errorMessage.includes("external_review_id")
+          ) {
+            toast.warning("Response approved! This is a test review and cannot be posted to Google Business.");
+          } else if (
+            errorMessage.includes("token expired") ||
+            errorMessage.includes("not connected") ||
+            errorMessage.includes("401")
+          ) {
+            toast.error(
+              "Response approved, but Google token expired. Please reconnect your account in Admin → Sources.",
+            );
+          } else if (errorMessage.includes("location not configured")) {
+            toast.error("Response approved, but Google Business location not configured properly.");
+          } else {
+            toast.error("Response approved but failed to post to Google. You can post it manually on Google Business.");
+          }
         } else {
-          toast.success("Response approved and posted to Google!");
+          toast.success("Response approved and successfully posted to Google Business!");
         }
       } else {
         toast.success("Response approved! (Manual posting required for this platform)");
@@ -118,7 +140,7 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
         .from("generated_responses")
         .update({
           response_text: editedText,
-          approval_status: "pending", // Reset to pending after edit
+          approval_status: "pending",
         })
         .eq("id", responseId);
 
@@ -158,12 +180,10 @@ const ReviewList = ({ reviews, loading, selectedReviews, onSelectReview, onRefre
 
   const handleRegenerate = async (review: Review, responseId: string) => {
     try {
-      // Delete the old rejected response
       const { error: deleteError } = await supabase.from("generated_responses").delete().eq("id", responseId);
 
       if (deleteError) throw deleteError;
 
-      // Trigger new analysis
       await handleAnalyze(review);
     } catch (error: any) {
       console.error("Regenerate error:", error);
