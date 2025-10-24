@@ -12,6 +12,7 @@ export interface Review {
   review_text: string;
   rating: number;
   source_platform: string;
+  source_id: string; // ADD THIS
   status: string;
   sentiment: string | null;
   review_date: string;
@@ -19,13 +20,6 @@ export interface Review {
   businesses: {
     name: string;
   };
-  generated_responses?: Array<{
-    id: string;
-    response_text: string;
-    approval_status: string;
-    ai_model_used: string;
-    created_at: string;
-  }>;
 }
 
 const DashboardView = () => {
@@ -85,7 +79,7 @@ const DashboardView = () => {
 
   const filteredReviews = reviews.filter((review) => {
     if (selectedBusiness !== "all" && review.business_id !== selectedBusiness) return false;
-    if (selectedSource !== "all" && review.source_platform !== selectedSource) return false;
+    if (selectedSource !== "all" && review.source_id !== selectedSource) return false;
     if (selectedRating !== "all" && review.rating !== parseInt(selectedRating)) return false;
     if (selectedSentiment !== "all" && review.sentiment?.toLowerCase() !== selectedSentiment) return false;
     return true;
