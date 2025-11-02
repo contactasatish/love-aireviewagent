@@ -1,7 +1,7 @@
 project_id = "gpskxbeimcxwgofpxxsm"
 
 [functions.analyze-review]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-new-user]
 verify_jwt = true
